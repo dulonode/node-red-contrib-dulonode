@@ -1,0 +1,48 @@
+<script type="text/javascript">
+    RED.nodes.registerType('DuloNodeDevice', {
+        category: 'function',
+        color: '#E6E0C7',
+        defaults: {
+            name: { value: "" },
+            deviceType: { value: "light" }
+        },
+        inputs: 1,
+        outputs: 1,
+        icon: "dulonode-device.svg",
+        label: function() {
+            return this.name || "DuloNode Device";
+        },
+        oneditprepare: function() {
+        }
+    });
+</script>
+
+<script type="text/html" data-template-name="DuloNodeDevice">
+    <div class="form-row">
+        <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+        <input type="text" id="node-input-name" placeholder="Name">
+    </div>
+    <div class="form-row">
+        <label for="node-input-deviceType"><i class="fa fa-cube"></i> Device Type</label>
+        <select id="node-input-deviceType">
+            <option value="switch">Switch</option>
+            <option value="light">Light</option>
+            <option value="fan">Fan</option>
+            <option value="blind">Blind</option>
+            <option value="thermostat">Thermostat</option>
+            <option value="garage_door">Garage door</option>
+            <option value="lock">Lock</option>
+            <option value="speaker">Speaker</option>
+            <option value="tv">TV</option>
+            <option value="scene">Scene</option>
+        </select>
+    </div>
+</script>
+
+<script type="text/html" data-help-name="DuloNodeDevice">
+    <p>DuloNode device node for home automation Alexa-supported device types.</p>
+    <p>
+        For a detailed description of this node and its functionality, visit 
+        <a href="https://www.dulonode.com/docs/device-node/" target="_blank">DuloNode Device documentation</a>.
+    </p>
+</script>

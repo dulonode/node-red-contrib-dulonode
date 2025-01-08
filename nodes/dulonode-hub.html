@@ -1,0 +1,138 @@
+<script type="text/javascript">
+    RED.nodes.registerType('DuloNodeHub', {
+        category: 'function',
+        color: '#D3C89E',
+        defaults: {
+            name: { value: '' },
+            plan: { value: 'Unknown' }
+        },
+        credentials: {
+            email: { type: 'text' },
+            password: { type: 'password' }
+        },
+        inputs: 1,
+        outputs: 1,
+        icon: 'dulonode-hub.svg',
+        label: function() {
+            return this.name || 'DuloNode Hub';
+        },
+        oneditprepare: function() {
+            const node = this;
+
+            // Function to load subscription details
+            function loadSubscriptionPlan() {
+
+                $.getJSON('dulonode/subscription/details')
+                    .done(function(data) {
+                        const currentPlanName = data.plan?.name || 'Unknown';
+
+                        if (currentPlanName !== node.plan) {
+                            // Deeployment is needed
+                            node.changed = true;
+                            RED.nodes.dirty(true);
+                        }
+
+                        node.plan = currentPlanName;
+
+                        $('#subscription-plan').text(currentPlanName);
+                        $('#subscription-plan').show();
+
+                        if (currentPlanName == 'Free') {
+                            $('#subscription-upgrade').show();
+                        } else {
+                            $('#subscription-manage').show();
+                        }
+                    })
+                    .fail(function() {
+                        $('#subscription-plan').text('Error loading plan');
+                    })
+                    .always(function() {
+                        if (node.plan != 'Unknown') {
+                            $('#subscription').show();
+                            $('#subscription-loading').hide();
+                        } else {
+                            $('#subscription').hide();
+                        }
+                    });
+            }
+
+            // Load subscription plan on edit prepare
+            loadSubscriptionPlan();
+
+            // Handle Manage and Upgrade button clicks
+            $('#subscription-manage').on('click', function() {
+                window.open('dulonode/subscription/manage', '_blank');
+            });
+
+            $('#subscription-upgrade').on('click', function() {
+                window.open('dulonode/subscription/upgrade', '_blank');
+            });
+        },
+        oneditsave: function () {
+            updatePlan(this);
+        },
+        oneditcancel: function () {
+            updatePlan(this);
+        }
+    });
+
+    function updatePlan(node) {
+        $.getJSON('dulonode/subscription/details')
+            .done((data) => {
+                const currentPlanName = data.plan?.name || 'Unknown';
+
+                if (currentPlanName !== node.plan) {
+                    // Deeployment is needed
+                    node.changed = true;
+                    RED.nodes.dirty(true);
+                }
+            });
+    }
+</script>
+
+<script type="text/x-red" data-template-name="DuloNodeHub">
+    <div class="form-row" style="margin-top: 20px">
+        <label style="width:100%;"><strong>DuloNode account</strong></label>
+        <hr align="middle" style="margin: 0 0 20px 0;">
+    </div>
+    <div class="form-row">
+        <label for="node-input-email"><i class="fa fa-envelope"></i> Email</label>
+        <input type="text" id="node-input-email" placeholder="Enter your email" />
+    </div>
+    <div class="form-row">
+        <label for="node-input-password"><i class="fa fa-key"></i> Password</label>
+        <input type="password" id="node-input-password" placeholder="Enter your password" />
+    </div>
+    <div class="form-row">
+        <label></label>
+        <small>Don't have an account? <a href="https://www.dulonode.com/pricing" style="text-decoration: underline" target="_blank">Sign Up</a></small>
+    </div>
+    <div id="subscription">
+        <div class="form-row" style="margin-top: 30px">
+            <label style="width:100%;"><strong>Subscription</strong></label>
+            <hr align="middle" style="margin: 0 0 20px 0;">
+        </div>
+        <div class="form-row">
+            <label for="subscription-plan-label"><i class="fa fa-info-circle"></i> Plan</label>
+            <span id="subscription-loading"><i class="fa fa-spinner fa-spin"></i> Loading...</span>
+            <b style="margin-right: 15px"><span id="subscription-plan" style="display:none;"></span></b>
+            <button id="subscription-manage" style="display:none;" class="red-ui-button red-ui-button-small">Manage subscription</button>
+            <button id="subscription-upgrade" style="display:none;" class="red-ui-button red-ui-button-small primary">Upgrade</button>
+        </div>
+    </div>
+    <div class="form-row">
+        <label></label>
+        <small>Need help? <a href="https://www.dulonode.com/contact" style="text-decoration: underline" target="_blank">Contact Us.</a></small>
+    </div>
+</script>
+
+<script type="text/x-red" data-help-name="DuloNodeHub">
+    <p>
+        This node is part of the DuloNode system. It integrates devices and provides information about your subscription plan.
+        Use the "Manage subscription" button to access your subscription settings or the "Upgrade" button to change your plan.
+    </p>
+    <p>
+        For a detailed description of this node and its functionality, visit 
+        <a href="https://www.dulonode.com/docs/hub-node/" target="_blank">DuloNode Hub documentation</a>.
+    </p>
+</script>
