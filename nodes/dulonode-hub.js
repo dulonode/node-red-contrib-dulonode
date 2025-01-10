@@ -17,6 +17,8 @@ module.exports = function(RED) {
         RED.nodes.createNode(this, config);
         
         const node = this;
+        
+        let mqttClient;
 
         if (node.credentials && node.credentials.hasOwnProperty("email")) {
             node.email = node.credentials.email;
@@ -178,10 +180,6 @@ module.exports = function(RED) {
             const clientId = `${apiAuth.user}`;
             const topic = `hub/${apiAuth.user}/device/update`;
 
-            // Retrieve existing MQTT client from context
-            let mqttClient = node.context().get('mqttClient');
-
-            // Check if an MQTT client already exists
             if (mqttClient) {
                 // Disconnect the existing client
                 try {
@@ -199,9 +197,6 @@ module.exports = function(RED) {
                 });
 
             mqttClient = new mqtt5.Mqtt5Client(configBuilder.build());
-
-            // Save the new client to context for future reference
-            node.context().set('mqttClient', mqttClient);
 
             // Event listener for connection success
             mqttClient.on('connectionSuccess', async () => {
@@ -298,6 +293,7 @@ module.exports = function(RED) {
                 });
         }
 
+        // Handle node input
         node.on('input', function (msg) {
             getToken()
                 .then((token) => {
@@ -314,6 +310,21 @@ module.exports = function(RED) {
                 .catch((err) => {
                     setStatus('error', 'Error', `Failed to retrieve token: ${err.message}`);
                 });
+        });
+
+        // Handle node shutdown or redeployment
+        node.on('close', function (done) {
+            if (mqttClient) {
+                try {
+                    mqttClient.stop();
+                    done();
+                } catch (error) {
+                    setStatus('error', 'MQTT stopping error', `Error stopping MQTT client: ${error.message}`);
+                    done(error);
+                }
+            } else {
+                done();
+            }
         });
 
         /**
