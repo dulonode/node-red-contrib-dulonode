@@ -22,10 +22,14 @@
   "author": "dulonode.com",
   "license": "SEE LICENSE IN LICENSE.md",
   "node-red": {
+    "version": ">=3.1.9",
     "nodes": {
       "DuloNodeHub": "nodes/dulonode-hub.js",
       "DuloNodeDevice": "nodes/dulonode-device.js"
     }
+  },
+  "engines": {
+    "node": ">=16.20.2"
   },
   "dependencies": {
     "aws-iot-device-sdk-v2": "^1.21.1",
