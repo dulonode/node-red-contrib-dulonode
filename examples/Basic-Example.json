@@ -1,0 +1,93 @@
+[
+    {
+        "id": "f88a9620419a1883",
+        "type": "tab",
+        "label": "DuloNode Flow",
+        "disabled": false,
+        "info": "",
+        "env": []
+    },
+    {
+        "id": "f4ef6f1a805d6072",
+        "type": "DuloNodeDevice",
+        "z": "f88a9620419a1883",
+        "name": "Kitchen Lights",
+        "deviceType": "light",
+        "x": 440,
+        "y": 240,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "692aa05d0c4577b7",
+        "type": "DuloNodeDevice",
+        "z": "f88a9620419a1883",
+        "name": "Living Room Fan",
+        "deviceType": "fan",
+        "x": 450,
+        "y": 360,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "98be797a96887649",
+        "type": "DuloNodeDevice",
+        "z": "f88a9620419a1883",
+        "name": "TV",
+        "deviceType": "tv",
+        "x": 410,
+        "y": 420,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "c06aab5bbdb6be29",
+        "type": "debug",
+        "z": "f88a9620419a1883",
+        "name": "Payload Debug",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 440,
+        "y": 180,
+        "wires": []
+    },
+    {
+        "id": "2a63e5a95f6ba233",
+        "type": "DuloNodeHub",
+        "z": "f88a9620419a1883",
+        "name": "",
+        "plan": "Free",
+        "x": 220,
+        "y": 300,
+        "wires": [
+            [
+                "692aa05d0c4577b7",
+                "f4ef6f1a805d6072",
+                "98be797a96887649",
+                "c06aab5bbdb6be29",
+                "f132d7ba8245a556"
+            ]
+        ]
+    },
+    {
+        "id": "f132d7ba8245a556",
+        "type": "DuloNodeDevice",
+        "z": "f88a9620419a1883",
+        "name": "Garage Door",
+        "deviceType": "fan",
+        "x": 430,
+        "y": 300,
+        "wires": [
+            []
+        ]
+    }
+]
