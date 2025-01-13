@@ -1,6 +1,6 @@
 {
   "name": "node-red-contrib-dulonode",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "DuloNode - Alexa on Node-RED made easy.",
   "main": "index.js",
   "homepage": "https://www.dulonode.com",
