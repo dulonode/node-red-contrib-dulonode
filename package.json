@@ -1,7 +1,7 @@
 {
   "name": "node-red-contrib-dulonode",
-  "version": "1.0.2",
-  "description": "DuloNode - Alexa on Node-RED made easy.",
+  "version": "1.0.3",
+  "description": "DuloNode.com - Alexa meets Node-RED. The easiest way to voice-control switches, lights, fans, blinds, garage doors, locks, thermostats, speakers, TVs, and more using Node-RED.",
   "main": "index.js",
   "homepage": "https://www.dulonode.com",
   "repository": {
@@ -17,19 +17,19 @@
   ],
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "node-red": "mkdir -p data && docker compose stop && docker compose up"
+    "docker:node-red": "mkdir -p data && docker compose stop && docker compose up"
   },
   "author": "dulonode.com",
   "license": "SEE LICENSE IN LICENSE.md",
   "node-red": {
-    "version": ">=3.1.9",
+    "version": ">=3.0.0",
     "nodes": {
       "DuloNodeHub": "nodes/dulonode-hub.js",
       "DuloNodeDevice": "nodes/dulonode-device.js"
     }
   },
   "engines": {
-    "node": ">=16.20.2"
+    "node": ">=16.0.0"
   },
   "dependencies": {
     "aws-iot-device-sdk-v2": "^1.21.1",
