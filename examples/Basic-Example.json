@@ -13,22 +13,26 @@
         "z": "f88a9620419a1883",
         "name": "Kitchen Lights",
         "deviceType": "light",
-        "x": 440,
-        "y": 240,
+        "x": 460,
+        "y": 260,
         "wires": [
-            []
+            [
+                "1968f5abfca6b655"
+            ]
         ]
     },
     {
         "id": "692aa05d0c4577b7",
         "type": "DuloNodeDevice",
         "z": "f88a9620419a1883",
-        "name": "Living Room Fan",
-        "deviceType": "fan",
-        "x": 450,
-        "y": 360,
+        "name": "Bedroom Air Conditioner",
+        "deviceType": "thermostat",
+        "x": 490,
+        "y": 377,
         "wires": [
-            []
+            [
+                "1c40d685999a67b0"
+            ]
         ]
     },
     {
@@ -37,10 +41,12 @@
         "z": "f88a9620419a1883",
         "name": "TV",
         "deviceType": "tv",
-        "x": 410,
-        "y": 420,
+        "x": 430,
+        "y": 440,
         "wires": [
-            []
+            [
+                "0be130047ae01683"
+            ]
         ]
     },
     {
@@ -56,8 +62,8 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 440,
-        "y": 180,
+        "x": 460,
+        "y": 200,
         "wires": []
     },
     {
@@ -65,9 +71,9 @@
         "type": "DuloNodeHub",
         "z": "f88a9620419a1883",
         "name": "",
-        "plan": "Free",
+        "plan": "Unknown",
         "x": 220,
-        "y": 300,
+        "y": 340,
         "wires": [
             [
                 "692aa05d0c4577b7",
@@ -83,11 +89,186 @@
         "type": "DuloNodeDevice",
         "z": "f88a9620419a1883",
         "name": "Garage Door",
-        "deviceType": "fan",
-        "x": 430,
-        "y": 300,
+        "deviceType": "garage_door",
+        "x": 450,
+        "y": 320,
         "wires": [
-            []
+            [
+                "9751337f47ca1429"
+            ]
         ]
+    },
+    {
+        "id": "1968f5abfca6b655",
+        "type": "function",
+        "z": "f88a9620419a1883",
+        "name": "Prepare MQTT",
+        "func": "\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 720,
+        "y": 260,
+        "wires": [
+            [
+                "1407cd69f420243c"
+            ]
+        ]
+    },
+    {
+        "id": "9751337f47ca1429",
+        "type": "function",
+        "z": "f88a9620419a1883",
+        "name": "Prepare MQTT",
+        "func": "\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 720,
+        "y": 320,
+        "wires": [
+            [
+                "45c39aaf72db15ce"
+            ]
+        ]
+    },
+    {
+        "id": "1407cd69f420243c",
+        "type": "mqtt out",
+        "z": "f88a9620419a1883",
+        "name": "",
+        "topic": "",
+        "qos": "",
+        "retain": "",
+        "respTopic": "",
+        "contentType": "",
+        "userProps": "",
+        "correl": "",
+        "expiry": "",
+        "broker": "f5bf82633e44e471",
+        "x": 890,
+        "y": 260,
+        "wires": []
+    },
+    {
+        "id": "45c39aaf72db15ce",
+        "type": "mqtt out",
+        "z": "f88a9620419a1883",
+        "name": "",
+        "topic": "",
+        "qos": "",
+        "retain": "",
+        "respTopic": "",
+        "contentType": "",
+        "userProps": "",
+        "correl": "",
+        "expiry": "",
+        "broker": "f5bf82633e44e471",
+        "x": 890,
+        "y": 320,
+        "wires": []
+    },
+    {
+        "id": "b91250652389301d",
+        "type": "http response",
+        "z": "f88a9620419a1883",
+        "name": "Daikin response",
+        "statusCode": "",
+        "headers": {},
+        "x": 920,
+        "y": 377,
+        "wires": []
+    },
+    {
+        "id": "12ecf3ae6fc80b88",
+        "type": "http response",
+        "z": "f88a9620419a1883",
+        "name": "Sony response",
+        "statusCode": "",
+        "headers": {},
+        "x": 920,
+        "y": 440,
+        "wires": []
+    },
+    {
+        "id": "0be130047ae01683",
+        "type": "http request",
+        "z": "f88a9620419a1883",
+        "name": "",
+        "method": "GET",
+        "ret": "txt",
+        "paytoqs": false,
+        "url": "",
+        "persist": false,
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 710,
+        "y": 440,
+        "wires": [
+            [
+                "12ecf3ae6fc80b88"
+            ]
+        ]
+    },
+    {
+        "id": "1c40d685999a67b0",
+        "type": "http request",
+        "z": "f88a9620419a1883",
+        "name": "",
+        "method": "GET",
+        "ret": "txt",
+        "paytoqs": false,
+        "url": "",
+        "persist": false,
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 710,
+        "y": 377,
+        "wires": [
+            [
+                "b91250652389301d"
+            ]
+        ]
+    },
+    {
+        "id": "f5bf82633e44e471",
+        "type": "mqtt-broker",
+        "name": "",
+        "broker": "mqtt",
+        "port": 1883,
+        "clientid": "",
+        "autoConnect": true,
+        "usetls": false,
+        "protocolVersion": 4,
+        "keepalive": 60,
+        "cleansession": true,
+        "autoUnsubscribe": true,
+        "birthTopic": "",
+        "birthQos": "0",
+        "birthRetain": "false",
+        "birthPayload": "",
+        "birthMsg": {},
+        "closeTopic": "",
+        "closeQos": "0",
+        "closeRetain": "false",
+        "closePayload": "",
+        "closeMsg": {},
+        "willTopic": "",
+        "willQos": "0",
+        "willRetain": "false",
+        "willPayload": "",
+        "willMsg": {},
+        "userProps": "",
+        "sessionExpiry": ""
     }
 ]
