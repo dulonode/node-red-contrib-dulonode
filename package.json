@@ -1,6 +1,6 @@
 {
   "name": "node-red-contrib-dulonode",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "Alexa integration for Node-RED. Voice-control lights, blinds, locks, thermostats, TVs, and more using Node-RED.",
   "main": "index.js",
   "homepage": "https://www.dulonode.com",
@@ -29,10 +29,13 @@
     }
   },
   "engines": {
-    "node": ">=16.0.0"
+    "node": ">=18.0.0"
   },
   "dependencies": {
-    "aws-iot-device-sdk-v2": "^1.21.1",
-    "aws-sdk": "^2.1691.0"
+    "@aws-sdk/client-cognito-identity-provider": "^3.760.0",
+    "aws-iot-device-sdk-v2": "^1.21.1"
+  },
+  "overrides": {
+    "help-me": "^5.0.0"
   }
 }

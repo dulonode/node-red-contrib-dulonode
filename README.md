@@ -29,9 +29,9 @@
 
 ## Setup Overview
 
-For detailed setup instructions, visit our [Getting Started page](https://www.dulonode.com/docs/getting-started). This guide provides step-by-step directions to create a DuloNode account, link the Alexa Skill, and configure Node-RED with DuloNode.
+For detailed setup instructions, visit our [Alexa Node-RED Setup Guide](https://www.dulonode.com/docs/getting-started). This guide provides step-by-step directions to create a DuloNode account, link the Alexa Skill, and configure Node-RED with DuloNode.
 
 ## Links
 
 - **Website**: [DuloNode Home](https://www.dulonode.com)
-- **Documentation**: [DuloNode Docs](https://www.dulonode.com/docs/getting-started)
+- **Documentation**: [Alexa Node-RED Setup Guide](https://www.dulonode.com/docs/getting-started)

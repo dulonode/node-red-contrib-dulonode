@@ -18,6 +18,20 @@ services:
       nodered-init: 
         condition: service_completed_successfully
 
+  mqtt:
+    image: "eclipse-mosquitto:latest"
+    environment: {}
+    ports:
+      - "1883:1883"
+    restart: unless-stopped
+    entrypoint: 
+      - "/bin/sh"
+      - "-c"
+      - "mosquitto -c /mosquitto-no-auth.conf"
+    depends_on:
+      nodered-init: 
+        condition: service_completed_successfully
+
   nodered-init:
     image: "nodered/node-red:latest"
     volumes:

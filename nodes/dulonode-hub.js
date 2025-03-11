@@ -1,10 +1,9 @@
 const { settings } = require('../settings.js')
-const AWS = require('aws-sdk');
 const axios = require('axios');
 const { mqtt5, iot } = require('aws-iot-device-sdk-v2');
+const { CognitoIdentityProviderClient, InitiateAuthCommand } = require('@aws-sdk/client-cognito-identity-provider');
 
-AWS.config.update({ region: settings.region });
-const identityProvider = new AWS.CognitoIdentityServiceProvider();
+const identityProvider = new CognitoIdentityProviderClient({ region: settings.region });
 
 module.exports = function(RED) {
 
@@ -130,16 +129,16 @@ module.exports = function(RED) {
                     }
                 };
 
-                identityProvider.initiateAuth(params, function (err, data) {
-                    if (err) {
-                        setStatus('error', 'Authentication error', `Authentication error: ${err.message}`);
-                        reject(err);
-                    } else {
-                        const token = data.AuthenticationResult.IdToken;
-                        const decodedToken = decodeToken(token);
-                        node.context().set('apiAuth', { token, user: decodedToken.sub });
-                        resolve(token);
-                    }
+                identityProvider.send(new InitiateAuthCommand(params))
+                .then((data) => {
+                    const token = data.AuthenticationResult.IdToken;
+                    const decodedToken = decodeToken(token);
+                    node.context().set('apiAuth', { token, user: decodedToken.sub });
+                    resolve(token);
+                })
+                .catch((err) => {
+                    setStatus('error', 'Authentication error', `Authentication error: ${err.message}`);
+                    reject(err);
                 });
             });
         }
