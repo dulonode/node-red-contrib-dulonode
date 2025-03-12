@@ -1,6 +1,6 @@
 const { settings } = require('../settings.js')
 const axios = require('axios');
-const { mqtt5, iot } = require('aws-iot-device-sdk-v2');
+const mqtt = require('mqtt');
 const { CognitoIdentityProviderClient, InitiateAuthCommand } = require('@aws-sdk/client-cognito-identity-provider');
 
 const identityProvider = new CognitoIdentityProviderClient({ region: settings.region });
@@ -130,16 +130,16 @@ module.exports = function(RED) {
                 };
 
                 identityProvider.send(new InitiateAuthCommand(params))
-                .then((data) => {
-                    const token = data.AuthenticationResult.IdToken;
-                    const decodedToken = decodeToken(token);
-                    node.context().set('apiAuth', { token, user: decodedToken.sub });
-                    resolve(token);
-                })
-                .catch((err) => {
-                    setStatus('error', 'Authentication error', `Authentication error: ${err.message}`);
-                    reject(err);
-                });
+                    .then((data) => {
+                        const token = data.AuthenticationResult.IdToken;
+                        const decodedToken = decodeToken(token);
+                        node.context().set('apiAuth', { token, user: decodedToken.sub });
+                        resolve(token);
+                    })
+                    .catch((err) => {
+                        setStatus('error', 'Authentication error', `Authentication error: ${err.message}`);
+                        reject(err);
+                    });
             });
         }
 
@@ -179,39 +179,41 @@ module.exports = function(RED) {
             const clientId = `${apiAuth.user}`;
             const topic = `hub/${apiAuth.user}/device/update`;
 
+            const options = {
+                clientId: clientId,
+                keepalive: 120,
+                cert: mqttAuth.certificate,
+                key: mqttAuth.private,
+                rejectUnauthorized: true
+            };
+
+            const url = `mqtts://${mqttAuth.endpoint}:8883`;
+
+            // Disconnect the existing client
             if (mqttClient) {
-                // Disconnect the existing client
                 try {
-                    mqttClient.stop();
+                    mqttClient.end();
                 } catch (error) {
                     setStatus('error', 'MQTT error', `Error stopping MQTT client: ${error.message}`);
                 }
             }
 
             // Initialize a new MQTT client
-            const configBuilder = iot.AwsIotMqtt5ClientConfigBuilder.newDirectMqttBuilderWithMtlsFromMemory(mqttAuth.endpoint, mqttAuth.certificate, mqttAuth.private)
-                .withConnectProperties({
-                    clientId,
-                    keepAliveIntervalSeconds: 120
+            mqttClient = mqtt.connect(url, options);
+
+            mqttClient.on('connect', () => {
+                mqttClient.subscribe(topic, { qos: 1 }, (err) => {
+                    if (err) {
+                        setStatus('error', 'error', `Error subscribing to topic: ${err.message}`);
+                    } else {
+                        setStatus('success', 'connected', '');
+                    }
                 });
-
-            mqttClient = new mqtt5.Mqtt5Client(configBuilder.build());
-
-            // Event listener for connection success
-            mqttClient.on('connectionSuccess', async () => {
-                try {
-                    await mqttClient.subscribe({
-                        subscriptions: [{ qos: mqtt5.QoS.AtLeastOnce, topicFilter: topic }]
-                    });
-                    setStatus('success', 'connected', '');
-                } catch (error) {
-                    setStatus('error', 'error', `Error subscribing to topic: ${error.message}`);
-                }
             });
-
+            
             // Event listener for incoming messages
-            mqttClient.on('messageReceived', (eventData) => {
-                const data = new TextDecoder('utf-8').decode(eventData.message.payload);
+            mqttClient.on('message', (topic, message) => {
+                const data = message.toString('utf8');
 
                 if (data) {
                     try {
@@ -229,9 +231,6 @@ module.exports = function(RED) {
             mqttClient.on('error', (error) => {
                 setStatus('error', 'MQTT error', `MQTT Client Error: ${error.message}`);
             });
-
-            // Start the new MQTT client
-            mqttClient.start();
         }
 
         function deploy() {
@@ -315,7 +314,7 @@ module.exports = function(RED) {
         node.on('close', function (done) {
             if (mqttClient) {
                 try {
-                    mqttClient.stop();
+                    mqttClient.end();
                     done();
                 } catch (error) {
                     setStatus('error', 'MQTT stopping error', `Error stopping MQTT client: ${error.message}`);

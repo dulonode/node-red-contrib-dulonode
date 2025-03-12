@@ -1,4 +1,5 @@
 # Node artifact files
+package-lock.json
 node_modules/
 dist/
 data/
@@ -43,4 +44,3 @@ Thumbs.db
 *.flv
 *.mov
 *.wmv
-
