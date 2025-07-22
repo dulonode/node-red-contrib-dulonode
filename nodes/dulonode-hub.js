@@ -413,6 +413,10 @@ module.exports = function(RED) {
             }
         });
 
+        RED.httpNode.get('/dulonode/installation', async (req, res) => {
+            res.json({ installation: process.env.HASSIO_TOKEN ? 'homeassistant' : 'standalone' });
+        });
+
         /**
          * On deploy, collect connected devices and send them to the API
          */

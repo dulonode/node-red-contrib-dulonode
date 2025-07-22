@@ -1,6 +1,6 @@
 {
   "name": "node-red-contrib-dulonode",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "description": "Alexa integration for Node-RED. Voice-control lights, blinds, locks, thermostats, TVs, and more using Node-RED.",
   "main": "index.js",
   "homepage": "https://www.dulonode.com",

@@ -4,7 +4,7 @@
         color: '#D3C89E',
         defaults: {
             name: { value: '' },
-            plan: { value: 'Unknown' }
+            installation: { value: 'standalone' }
         },
         credentials: {
             email: { type: 'text' },
@@ -19,25 +19,40 @@
         oneditprepare: function() {
             const node = this;
 
-            // Function to load subscription details
-            function loadSubscriptionPlan() {
+            let endpointPrefix = '';
 
-                $.getJSON('dulonode/subscription/details')
+            // Get instalation type
+            $.getJSON('dulonode/installation')
+                .done(function (data) {
+                    subscriptionPanel(data.installation);
+                })
+                .fail(function () {
+                    // Fallback to second endpoint
+                    $.getJSON('endpoint/dulonode/installation')
+                        .done(function (data) {
+                            subscriptionPanel(data.installation);
+                        })
+                        .fail(function () {
+                            subscriptionPanel('standalone');
+                        });
+                });
+
+            // Load subscription details
+            function subscriptionPanel(installation) {
+
+                console.log("Installation type:", installation);
+
+                endpointPrefix = installation == 'homeassistant' ? 'endpoint/' : '';
+                let plan = 'Unknown'
+
+                $.getJSON(`${endpointPrefix}dulonode/subscription/details`)
                     .done(function(data) {
-                        const currentPlanName = data.plan?.name || 'Unknown';
+                        plan = data.plan?.name || 'Unknown';
 
-                        if (currentPlanName !== node.plan) {
-                            // Deeployment is needed
-                            node.changed = true;
-                            RED.nodes.dirty(true);
-                        }
-
-                        node.plan = currentPlanName;
-
-                        $('#subscription-plan').text(currentPlanName);
+                        $('#subscription-plan').text(plan);
                         $('#subscription-plan').show();
 
-                        if (currentPlanName == 'Free') {
+                        if (plan == 'Free') {
                             $('#subscription-upgrade').show();
                         } else {
                             $('#subscription-manage').show();
@@ -47,47 +62,27 @@
                         $('#subscription-plan').text('Error loading plan');
                     })
                     .always(function() {
-                        if (node.plan != 'Unknown') {
+                        if (plan != 'Unknown') {
                             $('#subscription').show();
                             $('#subscription-loading').hide();
                         } else {
                             $('#subscription').hide();
                         }
                     });
+
+                // Handle Manage and Upgrade button clicks
+                $('#subscription-manage').on('click', function() {
+                    window.open(`${endpointPrefix}dulonode/subscription/manage`, '_blank');
+                    $("#node-dialog-cancel").click();
+                });
+
+                $('#subscription-upgrade').on('click', function() {
+                    window.open(`${endpointPrefix}dulonode/subscription/upgrade`, '_blank');
+                    $("#node-dialog-cancel").click();
+                });
             }
-
-            // Load subscription plan on edit prepare
-            loadSubscriptionPlan();
-
-            // Handle Manage and Upgrade button clicks
-            $('#subscription-manage').on('click', function() {
-                window.open('dulonode/subscription/manage', '_blank');
-            });
-
-            $('#subscription-upgrade').on('click', function() {
-                window.open('dulonode/subscription/upgrade', '_blank');
-            });
-        },
-        oneditsave: function () {
-            updatePlan(this);
-        },
-        oneditcancel: function () {
-            updatePlan(this);
         }
     });
-
-    function updatePlan(node) {
-        $.getJSON('dulonode/subscription/details')
-            .done((data) => {
-                const currentPlanName = data.plan?.name || 'Unknown';
-
-                if (currentPlanName !== node.plan) {
-                    // Deeployment is needed
-                    node.changed = true;
-                    RED.nodes.dirty(true);
-                }
-            });
-    }
 </script>
 
 <script type="text/x-red" data-template-name="DuloNodeHub">
