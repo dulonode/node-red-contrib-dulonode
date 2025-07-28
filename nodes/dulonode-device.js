@@ -16,7 +16,7 @@ module.exports = function (RED) {
                     node.status({ fill: 'green', shape: 'dot', text: '' });
                 } else {
                     // Device is limited, set status to grey
-                    node.status({ fill: 'grey', shape: 'ring', text: 'limited' });
+                    node.status({ fill: 'grey', shape: 'ring', text: 'paid only' });
                 }
             }
 
