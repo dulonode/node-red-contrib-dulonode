@@ -8,7 +8,9 @@
         },
         inputs: 1,
         outputs: 1,
-        icon: "dulonode-device.svg",
+        icon: function() {
+            return (this.deviceType || "device").replace(/_/g, "-") + ".svg";
+        },
         label: function() {
             return this.name || "DuloNode Device";
         },
