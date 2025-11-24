@@ -27,6 +27,40 @@ module.exports = function(RED) {
         }
 
         /**
+         * Normalize an error object into a safe string for status messages or logging.
+         * Optionally prints detailed information to the console if DULONODE_DEBUG is set.
+         *
+         * @param {Error|Object|string} err - The error object, string, or other value to process.
+         * @param {string} [label="Error"] - A short label prefix for the message.
+         * @returns {string} - A clean error message suitable for user-facing status updates.
+         */
+        function errorMessage(err, label = 'Error') {
+            let message;
+
+            if (err instanceof Error) {
+                message = `${label}: ${err.message || err.toString()}`;
+            } else {
+                try {
+                    message = `${label}: ${JSON.stringify(err, null, 2)}`;
+                } catch {
+                    message = `${label}: [unserializable error object]`;
+                }
+            }
+
+            if (process.env.DULONODE_DEBUG) {
+                RED.log.error(message); 
+                if (err instanceof Error && err.stack) {
+                    RED.log.error(`${label} stack:\n${err.stack}`);
+                } else {
+                    RED.log.error(`${label} raw object:`);
+                    RED.log.error(err);
+                }
+            }
+
+            return message;
+        }
+
+        /**
          * Set the node status based on the type and optionally send a message.
          * @param {string} statusType - The type of status ('success', 'error', 'loading').
          * @param {string} text - The generic text to display in the node status.
@@ -137,7 +171,7 @@ module.exports = function(RED) {
                         resolve(token);
                     })
                     .catch((err) => {
-                        setStatus('error', 'Authentication error', `Authentication error: ${err.message}`);
+                        setStatus('error', 'Authentication error', errorMessage(err, 'Authentication error'));
                         reject(err);
                     });
             });
@@ -204,7 +238,7 @@ module.exports = function(RED) {
             mqttClient.on('connect', () => {
                 mqttClient.subscribe(topic, { qos: 1 }, (err) => {
                     if (err) {
-                        setStatus('error', 'error', `Error subscribing to topic: ${err.message}`);
+                        setStatus('error', 'error', errorMessage(err, 'Error subscribing to topic'));
                     } else {
                         setStatus('success', 'connected', '');
                     }
@@ -282,12 +316,12 @@ module.exports = function(RED) {
                         }
                     })
                     .catch((err) => {
-                        setStatus('error', 'Deployment error', `Deployment error: ${err.message}`);
+                        setStatus('error', 'Deployment error', errorMessage(err, 'Deployment error'));
                     });
 
                 })
                 .catch((err) => {
-                    setStatus('error', 'Token error', `Token retrieval error: ${err.message}`);
+                    setStatus('error', 'Token error', errorMessage(err, 'Token retrieval error'));
                 });
         }
 
@@ -302,11 +336,11 @@ module.exports = function(RED) {
                         }
                     })
                     .catch((err) => {
-                        setStatus('error', 'Request failed', `Request to set device state failed: ${err.message}`);
+                        setStatus('error', 'Request failed', errorMessage(err, 'Request to set device state failed'));
                     });
                 })
                 .catch((err) => {
-                    setStatus('error', 'Error', `Failed to retrieve token: ${err.message}`);
+                    setStatus('error', 'Token error', errorMessage(err, 'Token retrieval error'));
                 });
         });
 
@@ -348,12 +382,12 @@ module.exports = function(RED) {
                     }
                 })
                 .catch((err) => {
-                    setStatus('error', 'Upgrade subscription error', `Upgrade subscription error: ${err.message}`);
+                    setStatus('error', 'Upgrade subscription error', errorMessage(err, 'Upgrade subscription error'));
                     res.status(500).send({ error: error.message });
                 });
             })
             .catch((err) => {
-                setStatus('error', 'Token error', `Token retrieval error: ${err.message}`);
+                setStatus('error', 'Token error', errorMessage(err, 'Token retrieval error'));
             });
 
         });
@@ -379,7 +413,7 @@ module.exports = function(RED) {
                 }
             } catch (err) {
                 // Log and handle errors
-                setStatus('error', 'Manage subscription error', `Manage subscription error: ${err.message}`);
+                setStatus('error', 'Manage subscription error', errorMessage(err, 'Manage subscription error'));
                 res.status(500).send({ error: err.message });
             }
         });        
@@ -407,7 +441,7 @@ module.exports = function(RED) {
                     }
                 } catch (err) {
                     // Log and handle errors
-                    setStatus('error', 'Subscription details error', `Subscription details error: ${err.message}`);
+                    setStatus('error', 'Subscription details error', errorMessage(err, 'Subscription details error'));
                     res.status(500).send({ error: err.message });
                 }
             }

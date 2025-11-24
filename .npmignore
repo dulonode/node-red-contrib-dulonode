@@ -1,0 +1,24 @@
+# Node artifact files
+package-lock.json
+node_modules/
+dist/
+data/
+
+# Development
+.git
+.gitignore
+.env
+.env.example
+
+# Documentation
+*.md
+!README.md
+!LICENSE.md
+
+# Development tools
+.DS_Store
+Thumbs.db
+*.log
+.vscode/
+.idea/
+*.swp

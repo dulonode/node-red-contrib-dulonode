@@ -4,6 +4,11 @@ node_modules/
 dist/
 data/
 
+# Documentation
+*.md
+!README.md
+!LICENSE.md
+
 # Compiled Java class files
 *.class
 
