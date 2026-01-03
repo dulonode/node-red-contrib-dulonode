@@ -130,6 +130,23 @@ module.exports = function(RED) {
         }
 
         /**
+         * Clear authentication context and disconnect MQTT client.
+         */
+        function clearAuthContext() {
+            RED.log.info("Clear auth context");
+            node.context().set('apiAuth', null);
+            node.context().set('mqttAuth', null);
+            if (mqttClient) {
+                try {
+                    mqttClient.end(true);
+                    mqttClient = null;
+                } catch (e) {
+                    RED.log.warn("Error closing MQTT after auth failure", e);
+                }
+            }
+        }
+
+        /**
          * Retrieves a valid token from cache or triggers a fresh authentication.
          * Always returns a Promise.
          * @returns {Promise<string>} - A promise resolving to a valid token.
@@ -171,6 +188,7 @@ module.exports = function(RED) {
                         resolve(token);
                     })
                     .catch((err) => {
+                        clearAuthContext();
                         setStatus('error', 'Authentication error', errorMessage(err, 'Authentication error'));
                         reject(err);
                     });
@@ -320,8 +338,9 @@ module.exports = function(RED) {
                     });
 
                 })
-                .catch((err) => {
-                    setStatus('error', 'Token error', errorMessage(err, 'Token retrieval error'));
+                .catch(() => {
+                    // Authentication error already handled in authenticate()
+                    // Just catch here to prevent unhandled rejection
                 });
         }
 
@@ -339,8 +358,9 @@ module.exports = function(RED) {
                         setStatus('error', 'Request failed', errorMessage(err, 'Request to set device state failed'));
                     });
                 })
-                .catch((err) => {
-                    setStatus('error', 'Token error', errorMessage(err, 'Token retrieval error'));
+                .catch(() => {
+                    // Authentication error already handled in authenticate()
+                    // Just catch here to prevent unhandled rejection
                 });
         });
 
@@ -383,11 +403,12 @@ module.exports = function(RED) {
                 })
                 .catch((err) => {
                     setStatus('error', 'Upgrade subscription error', errorMessage(err, 'Upgrade subscription error'));
-                    res.status(500).send({ error: error.message });
+                    res.status(500).send({ error: err.message });
                 });
             })
             .catch((err) => {
                 setStatus('error', 'Token error', errorMessage(err, 'Token retrieval error'));
+                res.status(500).send({ error: err.message });
             });
 
         });
