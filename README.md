@@ -29,9 +29,20 @@
 
 ## Setup Overview
 
-For detailed setup instructions, visit our [Alexa Node-RED Setup Guide](https://www.dulonode.com/docs/getting-started). This guide provides step-by-step directions to create a DuloNode account, link the Alexa Skill, and configure Node-RED with DuloNode.
+Getting started with DuloNode is quick and straightforward. The setup consists of the following steps:
 
-## Links
+1. **Create a DuloNode account**  
+   Sign up for a DuloNode account at https://www.dulonode.com. This account is used to link Alexa with your Node-RED flows.
 
-- **Website**: [DuloNode Home](https://www.dulonode.com)
-- **Documentation**: [Alexa Node-RED Setup Guide](https://www.dulonode.com/docs/getting-started)
+2. **Enable the DuloNode Alexa Skill**  
+   Enable the DuloNode skill from the Amazon Alexa Skill Store and link it using your DuloNode account. The skill is available in multiple locales, including English, French, German, Italian, Portuguese, and Spanish.
+
+3. **Set up Node-RED**  
+   Install the `node-red-contrib-dulonode` module, import the provided basic flow, and sign in using the DuloNode Hub node.
+
+4. **Discover your devices**  
+   Once deployed, ask Alexa to discover devices. Your Node-RED flows will be exposed to Alexa and ready for voice control.
+
+For full setup instructions, supported devices, JSON payloads, and detailed configuration guides, visit the official DuloNode website:
+
+https://www.dulonode.com
