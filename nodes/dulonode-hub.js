@@ -289,18 +289,45 @@ module.exports = function(RED) {
             const nodeWires = node.wires || [];
             const connectedNodes = {};
 
+            // Build index of all nodes for efficient lookup
+            const nodeIndex = {};
             RED.nodes.eachNode((currentNode) => {
-                nodeWires.forEach(output => {
-                    output.forEach(connectedNodeID => {
-                        if (currentNode.id === connectedNodeID && currentNode.type === "DuloNodeDevice") {
-                            connectedNodes[connectedNodeID] = {
-                                name: currentNode.name || "Unnamed",
-                                type: currentNode.deviceType || "light"
-                            };
-                        }
-                    });
-                });
+                nodeIndex[currentNode.id] = currentNode;
             });
+
+            // Check each directly connected node
+            for (const output of nodeWires) {
+                for (const connectedNodeID of output) {
+                    const connectedNode = nodeIndex[connectedNodeID];
+                    if (!connectedNode) continue;
+
+                    if (connectedNode.type === "DuloNodeDevice") {
+                        // Direct connection to device
+                        connectedNodes[connectedNodeID] = {
+                            name: connectedNode.name || "Unnamed",
+                            type: connectedNode.deviceType || "light"
+                        };
+                    } else if (connectedNode.type === "link out") {
+                        // Follow LinkOut -> LinkIn -> Device
+                        for (const linkInId of (connectedNode.links || [])) {
+                            const linkInNode = nodeIndex[linkInId];
+                            if (linkInNode && linkInNode.type === "link in") {
+                                for (const wireOutput of (linkInNode.wires || [])) {
+                                    for (const deviceId of wireOutput) {
+                                        const deviceNode = nodeIndex[deviceId];
+                                        if (deviceNode && deviceNode.type === "DuloNodeDevice") {
+                                            connectedNodes[deviceId] = {
+                                                name: deviceNode.name || "Unnamed",
+                                                type: deviceNode.deviceType || "light"
+                                            };
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
 
             getToken()
                 .then((token) => {
