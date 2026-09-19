@@ -5,6 +5,12 @@ const { CognitoIdentityProviderClient, InitiateAuthCommand } = require('@aws-sdk
 
 const identityProvider = new CognitoIdentityProviderClient({ region: settings.region });
 
+const permanentAuthErrors = ['NotAuthorizedException', 'UserNotFoundException', 'UserNotConfirmedException', 'PasswordResetRequiredException'];
+
+// Milliseconds
+const retryMinDelay = 5000;
+const retryMaxDelay = 300000;
+
 module.exports = function(RED) {
 
     /**
@@ -18,6 +24,9 @@ module.exports = function(RED) {
         const node = this;
         
         let mqttClient;
+        let retryTimer;
+        let retryDelay = retryMinDelay;
+        let closed = false;
 
         if (node.credentials && node.credentials.hasOwnProperty("email")) {
             node.email = node.credentials.email;
@@ -147,6 +156,49 @@ module.exports = function(RED) {
         }
 
         /**
+         * Checks if the error is a Cognito rejection of the credentials, which retrying cannot fix.
+         * @param {Error} err - The error returned by authentication.
+         * @returns {boolean} - True if the credentials were rejected, false otherwise.
+         */
+        function isPermanentAuthError(err) {
+            return permanentAuthErrors.includes(err?.name);
+        }
+
+        /**
+         * Checks if a failed API request is worth retrying (network error, throttling or server error).
+         * @param {Error} err - The axios error.
+         * @returns {boolean} - True if the request should be retried, false otherwise.
+         */
+        function isRetryableRequestError(err) {
+            const status = err.response?.status;
+            return !status || status === 429 || status >= 500;
+        }
+
+        /**
+         * Schedules another deploy attempt after a transient failure.
+         * The delay doubles on each attempt up to retryMaxDelay, with ±20% jitter.
+         * @param {Error} err - The error that caused the failure.
+         * @param {string} label - A short label prefix for the log message.
+         */
+        function scheduleRetry(err, label) {
+            if (closed || retryTimer) {
+                return;
+            }
+
+            const delay = retryDelay * (0.8 + Math.random() * 0.4);
+            const seconds = Math.round(delay / 1000);
+
+            RED.log.warn(`${errorMessage(err, label)}. Retrying in ${seconds}s`);
+            setStatus('loading', `connecting (retry in ${seconds}s)`, '');
+
+            retryTimer = setTimeout(() => {
+                retryTimer = null;
+                deploy();
+            }, delay);
+            retryDelay = Math.min(retryDelay * 2, retryMaxDelay);
+        }
+
+        /**
          * Retrieves a valid token from cache or triggers a fresh authentication.
          * Always returns a Promise.
          * @returns {Promise<string>} - A promise resolving to a valid token.
@@ -188,8 +240,11 @@ module.exports = function(RED) {
                         resolve(token);
                     })
                     .catch((err) => {
-                        clearAuthContext();
-                        setStatus('error', 'Authentication error', errorMessage(err, 'Authentication error'));
+                        // Transient errors (network, clock, throttling) are left to the caller to retry
+                        if (isPermanentAuthError(err)) {
+                            clearAuthContext();
+                            setStatus('error', 'Authentication error', errorMessage(err, 'Authentication error'));
+                        }
                         reject(err);
                     });
             });
@@ -340,6 +395,8 @@ module.exports = function(RED) {
                         }
                     })
                     .then((response) => {
+                        retryDelay = retryMinDelay;
+
                         const { data } = response.data;
 
                         if ( data?.minVersion && compatibilityCheck(data.minVersion) ){
@@ -361,13 +418,19 @@ module.exports = function(RED) {
                         }
                     })
                     .catch((err) => {
-                        setStatus('error', 'Deployment error', errorMessage(err, 'Deployment error'));
+                        if (isRetryableRequestError(err)) {
+                            scheduleRetry(err, 'DuloNode deploy error');
+                        } else {
+                            setStatus('error', 'Deployment error', errorMessage(err, 'Deployment error'));
+                        }
                     });
 
                 })
-                .catch(() => {
-                    // Authentication error already handled in authenticate()
-                    // Just catch here to prevent unhandled rejection
+                .catch((err) => {
+                    // Credential errors are already reported in authenticate()
+                    if (!isPermanentAuthError(err)) {
+                        scheduleRetry(err, 'DuloNode login error');
+                    }
                 });
         }
 
@@ -385,14 +448,19 @@ module.exports = function(RED) {
                         setStatus('error', 'Request failed', errorMessage(err, 'Request to set device state failed'));
                     });
                 })
-                .catch(() => {
-                    // Authentication error already handled in authenticate()
-                    // Just catch here to prevent unhandled rejection
+                .catch((err) => {
+                    // Credential errors are already reported in authenticate()
+                    if (!isPermanentAuthError(err)) {
+                        setStatus('error', 'Connection error', errorMessage(err, 'Connection error'));
+                    }
                 });
         });
 
         // Handle node shutdown or redeployment
         node.on('close', function (done) {
+            closed = true;
+            clearTimeout(retryTimer);
+
             if (mqttClient) {
                 try {
                     mqttClient.end();
