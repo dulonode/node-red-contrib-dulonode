@@ -8,8 +8,12 @@ const identityProvider = new CognitoIdentityProviderClient({ region: settings.re
 const permanentAuthErrors = ['NotAuthorizedException', 'UserNotFoundException', 'UserNotConfirmedException', 'PasswordResetRequiredException'];
 
 // Milliseconds
+const mqttStopTimeout = 2000;
 const retryMinDelay = 5000;
 const retryMaxDelay = 300000;
+
+// Failed attempts, about one per second, before reporting an error
+const mqttErrorThreshold = 30;
 
 module.exports = function(RED) {
 
@@ -24,6 +28,7 @@ module.exports = function(RED) {
         const node = this;
         
         let mqttClient;
+        let mqttFailures = 0;
         let retryTimer;
         let retryDelay = retryMinDelay;
         let closed = false;
@@ -272,6 +277,37 @@ module.exports = function(RED) {
         }
 
         /**
+         * Disconnect the current MQTT client and wait for it to finish closing.
+         * Resolves after mqttStopTimeout even if the client does not report back,
+         * so a stuck connection cannot hold up a deploy.
+         * @returns {Promise} - A promise resolving once the client is closed.
+         */
+        function stopMQTT() {
+            return new Promise((resolve) => {
+                if (!mqttClient) {
+                    resolve();
+                    return;
+                }
+
+                const client = mqttClient;
+                mqttClient = null;
+
+                const timer = setTimeout(resolve, mqttStopTimeout);
+                const done = () => {
+                    clearTimeout(timer);
+                    resolve();
+                };
+
+                try {
+                    client.end(false, {}, done);
+                } catch (error) {
+                    RED.log.warn(errorMessage(error, 'Error stopping MQTT client'));
+                    done();
+                }
+            });
+        }
+
+        /**
          * Function to initiate MQTT connection.
          */
         function initMQTT() {
@@ -296,47 +332,66 @@ module.exports = function(RED) {
 
             const url = `mqtts://${mqttAuth.endpoint}:8883`;
 
-            // Disconnect the existing client
-            if (mqttClient) {
-                try {
-                    mqttClient.end();
-                } catch (error) {
-                    setStatus('error', 'MQTT error', `Error stopping MQTT client: ${error.message}`);
+            // Wait for the existing client to disconnect, so the broker never sees
+            // two connections sharing the client id and disconnecting each other
+            stopMQTT().then(() => {
+                if (closed) {
+                    return;
                 }
-            }
 
-            // Initialize a new MQTT client
-            mqttClient = mqtt.connect(url, options);
+                // Initialize a new MQTT client. The handlers below use this reference
+                // rather than mqttClient, so a client that has been replaced cannot
+                // report on behalf of the current one.
+                const client = mqtt.connect(url, options);
+                mqttClient = client;
 
-            mqttClient.on('connect', () => {
-                mqttClient.subscribe(topic, { qos: 1 }, (err) => {
-                    if (err) {
-                        setStatus('error', 'error', errorMessage(err, 'Error subscribing to topic'));
+                client.on('connect', () => {
+                    if (client !== mqttClient) {
+                        return;
+                    }
+
+                    client.subscribe(topic, { qos: 1 }, (err) => {
+                        if (err) {
+                            setStatus('error', 'error', errorMessage(err, 'Error subscribing to topic'));
+                        } else {
+                            mqttFailures = 0;
+                            setStatus('success', 'connected', '');
+                        }
+                    });
+                });
+
+                // Event listener for incoming messages
+                client.on('message', (topic, message) => {
+                    const data = message.toString('utf8');
+
+                    if (data) {
+                        try {
+                            const payload = JSON.parse(data);
+                            node.send({ payload });
+                        } catch (jsonError) {
+                            setStatus('error', '', `Error parsing JSON payload: ${jsonError.message}`);
+                        }
                     } else {
-                        setStatus('success', 'connected', '');
+                        setStatus('error', '', 'Empty payload received from MQTT');
                     }
                 });
-            });
-            
-            // Event listener for incoming messages
-            mqttClient.on('message', (topic, message) => {
-                const data = message.toString('utf8');
 
-                if (data) {
-                    try {
-                        const payload = JSON.parse(data);
-                        node.send({ payload });
-                    } catch (jsonError) {
-                        setStatus('error', '', `Error parsing JSON payload: ${jsonError.message}`);
+                // Event listener for errors. The client reconnects on its own, so the
+                // first failures are reported as progress and only a lasting outage
+                // is reported as an error.
+                client.on('error', (error) => {
+                    if (client !== mqttClient) {
+                        return;
                     }
-                } else {
-                    setStatus('error', '', 'Empty payload received from MQTT');
-                }
-            });
 
-            // Event listener for errors
-            mqttClient.on('error', (error) => {
-                setStatus('error', 'MQTT error', `MQTT Client Error: ${error.message}`);
+                    mqttFailures++;
+
+                    if (mqttFailures === 1) {
+                        setStatus('loading', 'connecting', '');
+                    } else if (mqttFailures === mqttErrorThreshold) {
+                        setStatus('error', 'MQTT error', `MQTT Client Error: ${error.message}`);
+                    }
+                });
             });
         }
 
@@ -461,17 +516,7 @@ module.exports = function(RED) {
             closed = true;
             clearTimeout(retryTimer);
 
-            if (mqttClient) {
-                try {
-                    mqttClient.end();
-                    done();
-                } catch (error) {
-                    setStatus('error', 'MQTT stopping error', `Error stopping MQTT client: ${error.message}`);
-                    done(error);
-                }
-            } else {
-                done();
-            }
+            stopMQTT().then(() => done());
         });
 
         /**
