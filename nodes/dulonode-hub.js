@@ -9,11 +9,17 @@ const permanentAuthErrors = ['NotAuthorizedException', 'UserNotFoundException', 
 
 // Milliseconds
 const mqttStopTimeout = 2000;
+const mqttReconnectMinDelay = 1000;
+const mqttReconnectMaxDelay = 300000;
+const mqttStableTime = 600000;
 const retryMinDelay = 5000;
 const retryMaxDelay = 300000;
 
 // Failed attempts, about one per second, before reporting an error
 const mqttErrorThreshold = 30;
+
+// Connections closed shortly after connecting, before reporting an error
+const mqttDropThreshold = 3;
 
 module.exports = function(RED) {
 
@@ -29,6 +35,9 @@ module.exports = function(RED) {
         
         let mqttClient;
         let mqttFailures = 0;
+        let mqttDrops = 0;
+        let mqttConnectedAt = null;
+        let mqttReconnectDelay = mqttReconnectMinDelay;
         let retryTimer;
         let retryDelay = retryMinDelay;
         let closed = false;
@@ -320,11 +329,17 @@ module.exports = function(RED) {
             }
 
             const clientId = `${apiAuth.user}`;
-            const topic = `hub/${apiAuth.user}/device/update`;
+            const topic = `${settings.mqttTopicPrefix}hub/${apiAuth.user}/device/update`;
+
+            // Start with the shortest reconnect delay, so a redeploy connects right away
+            mqttDrops = 0;
+            mqttConnectedAt = null;
+            mqttReconnectDelay = mqttReconnectMinDelay;
 
             const options = {
                 clientId: clientId,
                 keepalive: 120,
+                reconnectPeriod: mqttReconnectDelay,
                 cert: mqttAuth.certificate,
                 key: mqttAuth.private,
                 rejectUnauthorized: true
@@ -349,6 +364,8 @@ module.exports = function(RED) {
                     if (client !== mqttClient) {
                         return;
                     }
+
+                    mqttConnectedAt = Date.now();
 
                     client.subscribe(topic, { qos: 1 }, (err) => {
                         if (err) {
@@ -391,6 +408,35 @@ module.exports = function(RED) {
                     } else if (mqttFailures === mqttErrorThreshold) {
                         setStatus('error', 'MQTT error', `MQTT Client Error: ${error.message}`);
                     }
+                });
+
+                // Event listener for closed connections. A connection closed shortly after connecting
+                // usually means another Node-RED is connected with the same account, so each reconnect
+                // waits twice as long, up to mqttReconnectMaxDelay.
+                client.on('close', () => {
+                    if (client !== mqttClient || !mqttConnectedAt) {
+                        return;
+                    }
+
+                    const connectedTime = Date.now() - mqttConnectedAt;
+                    mqttConnectedAt = null;
+
+                    if (connectedTime >= mqttStableTime) {
+                        mqttDrops = 0;
+                        mqttReconnectDelay = mqttReconnectMinDelay;
+                    } else {
+                        mqttDrops++;
+                        mqttReconnectDelay = Math.min(mqttReconnectDelay * 2, mqttReconnectMaxDelay);
+
+                        if (mqttDrops === mqttDropThreshold) {
+                            setStatus('error', 'Disconnected', 'MQTT connection keeps closing. Is another Node-RED connected with the same DuloNode account?');
+                        } else {
+                            setStatus('loading', 'reconnecting', '');
+                        }
+                    }
+
+                    // Set the delay for the next reconnect
+                    client.options.reconnectPeriod = mqttReconnectDelay;
                 });
             });
         }
