@@ -17,70 +17,6 @@
             return this.name || 'DuloNode Hub';
         },
         oneditprepare: function() {
-            const node = this;
-
-            let endpointPrefix = '';
-
-            // Get instalation type
-            $.getJSON('dulonode/installation')
-                .done(function (data) {
-                    subscriptionPanel(data.installation);
-                })
-                .fail(function () {
-                    // Fallback to second endpoint
-                    $.getJSON('endpoint/dulonode/installation')
-                        .done(function (data) {
-                            subscriptionPanel(data.installation);
-                        })
-                        .fail(function () {
-                            subscriptionPanel('standalone');
-                        });
-                });
-
-            // Load subscription details
-            function subscriptionPanel(installation) {
-
-                console.log("Installation type:", installation);
-
-                endpointPrefix = installation == 'homeassistant' ? 'endpoint/' : '';
-                let plan = 'Unknown'
-
-                $.getJSON(`${endpointPrefix}dulonode/subscription/details`)
-                    .done(function(data) {
-                        plan = data.plan?.name || 'Unknown';
-
-                        $('#subscription-plan').text(plan);
-                        $('#subscription-plan').show();
-
-                        if (plan == 'Free') {
-                            $('#subscription-upgrade').show();
-                        } else {
-                            $('#subscription-manage').show();
-                        }
-                    })
-                    .fail(function() {
-                        $('#subscription-plan').text('Error loading plan');
-                    })
-                    .always(function() {
-                        if (plan != 'Unknown') {
-                            $('#subscription').show();
-                            $('#subscription-loading').hide();
-                        } else {
-                            $('#subscription').hide();
-                        }
-                    });
-
-                // Handle Manage and Upgrade button clicks
-                $('#subscription-manage').on('click', function() {
-                    window.open(`${endpointPrefix}dulonode/subscription/manage`, '_blank');
-                    $("#node-dialog-cancel").click();
-                });
-
-                $('#subscription-upgrade').on('click', function() {
-                    window.open(`${endpointPrefix}dulonode/subscription/upgrade`, '_blank');
-                    $("#node-dialog-cancel").click();
-                });
-            }
         }
     });
 </script>
@@ -100,31 +36,13 @@
     </div>
     <div class="form-row">
         <label></label>
-        <small>Don't have an account? <a href="https://www.dulonode.com" style="text-decoration: underline" target="_blank">Sign Up</a></small>
-    </div>
-    <div id="subscription">
-        <div class="form-row" style="margin-top: 30px">
-            <label style="width:100%;"><strong>Subscription</strong></label>
-            <hr align="middle" style="margin: 0 0 20px 0;">
-        </div>
-        <div class="form-row">
-            <label for="subscription-plan-label"><i class="fa fa-info-circle"></i> Plan</label>
-            <span id="subscription-loading"><i class="fa fa-spinner fa-spin"></i> Loading...</span>
-            <b style="margin-right: 15px"><span id="subscription-plan" style="display:none;"></span></b>
-            <button id="subscription-manage" style="display:none;" class="red-ui-button red-ui-button-small">Manage subscription</button>
-            <button id="subscription-upgrade" style="display:none;" class="red-ui-button red-ui-button-small primary">Upgrade</button>
-        </div>
-    </div>
-    <div class="form-row">
-        <label></label>
-        <small>Need help? <a href="https://www.dulonode.com/contact" style="text-decoration: underline" target="_blank">Contact Us.</a></small>
+        <small>Don't have an account? <a href="https://www.dulonode.com" style="text-decoration: underline" target="_blank">Sign Up</a> &middot; Need help? <a href="https://www.dulonode.com/contact" style="text-decoration: underline" target="_blank">Contact Us</a></small>
     </div>
 </script>
 
 <script type="text/x-red" data-help-name="DuloNodeHub">
     <p>
-        This node is part of the DuloNode system. It integrates devices and provides information about your subscription plan.
-        Use the "Manage subscription" button to access your subscription settings or the "Upgrade" button to change your plan.
+        This node is part of the DuloNode system. It integrates and manages your devices.
     </p>
     <p>
         For a detailed description of this node and its functionality, visit 
