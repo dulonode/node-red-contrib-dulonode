@@ -1,6 +1,6 @@
 {
   "name": "node-red-contrib-dulonode",
-  "version": "1.0.14",
+  "version": "1.0.15",
   "description": "Alexa voice control for Node-RED, set up in minutes - no coding or custom skill to build.",
   "main": "index.js",
   "homepage": "https://www.dulonode.com",
