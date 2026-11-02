@@ -16,16 +16,18 @@
 
 | Device Type     | Features                                  |
 | --------------- | ----------------------------------------- |
-| **Switch**      | On/Off                                    |
-| **Light**       | On/Off, Brightness, Color, Temperature    |
-| **Fan**         | On/Off, Speed Control, Oscillation        |
-| **Thermostat**  | Temperature Control, Modes, Sensors       |
-| **Speaker**     | Playback, Volume Control                  |
-| **TV**          | On/Off, Volume, Channels, Input Selection |
-| **Garage Door** | Open/Close                                |
-| **Lock**        | Lock/Unlock                               |
+| **Battery**     | Charge Level, State, Time Remaining, Temperature |
 | **Blind**       | Lift Control                              |
+| **Charging Station** | On/Off, Charging Mode, Current Control |
+| **Fan**         | On/Off, Speed Control, Oscillation        |
+| **Garage Door** | Open/Close                                |
+| **Light**       | On/Off, Brightness, Color, Temperature    |
+| **Lock**        | Lock/Unlock                               |
 | **Scene**       | Scene Activation                          |
+| **Speaker**     | Playback, Volume Control                  |
+| **Switch**      | On/Off                                    |
+| **Thermostat**  | Temperature Control, Modes, Sensors       |
+| **TV**          | On/Off, Volume, Channels, Input Selection |
 
 ## Setup Overview
 

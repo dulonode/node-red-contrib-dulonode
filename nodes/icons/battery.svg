@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   width="40"
+   height="60"
+   viewBox="0 0 40 60"
+   fill="none"
+   stroke="currentColor"
+   stroke-width="2"
+   stroke-linecap="round"
+   stroke-linejoin="round"
+   data-lucide="battery-medium"
+   class="lucide lucide-battery-medium device-icon"
+   version="1.1"
+   id="svg-battery"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <defs id="defs-battery" />
+  <g id="g-battery">
+    <path d="M 15,13.5 H 25" id="battery-terminal" style="stroke:#ffffff;stroke-width:3;stroke-dasharray:none;stroke-opacity:1" />
+    <rect x="9" y="17" width="22" height="30" rx="3" id="battery-body" style="fill:none;stroke:#ffffff;stroke-width:3;stroke-dasharray:none;stroke-opacity:1" />
+    <path d="M 14.5,31 H 25.5" id="battery-bar-1" style="stroke:#ffffff;stroke-width:3;stroke-dasharray:none;stroke-opacity:1" />
+    <path d="M 14.5,39 H 25.5" id="battery-bar-2" style="stroke:#ffffff;stroke-width:3;stroke-dasharray:none;stroke-opacity:1" />
+  </g>
+</svg>
